@@ -22,6 +22,7 @@ public class NeuralNetwork {
     private double[] outputWeights;
     private double outputBias;
     private double learningRate;
+    private double[] hiddenLayerOutputs;
 
     public NeuralNetwork(int inputSize, int hiddenSize, int outputSize, double learningRate) {
         this.inputSize = inputSize;
@@ -55,17 +56,28 @@ public class NeuralNetwork {
     }
 
     public double forward(double input) {
-        double[] hiddenLayerOutputs = new double[hiddenSize];
-
-        for (int i = 0; i < hiddenSize; i++) {
-            hiddenLayerOutputs[i] = sigmoid(input * hiddenWeights[i][0] + hiddenBiases[i]);
+        hiddenLayerOutputs = new double[hiddenSize]; // Initializing hiddenLayerOutputs
+        for (int j = 0; j < hiddenSize; j++) {
+            hiddenLayerOutputs[j] = sigmoid(input * hiddenWeights[j][0] + hiddenBiases[j]);
         }
 
         double output = 0;
-        for (int i = 0; i < hiddenSize; i++) {
-            output += hiddenLayerOutputs[i] * outputWeights[i];
+        for (int j = 0; j < hiddenSize; j++) {
+            output += hiddenLayerOutputs[j] * outputWeights[j];
         }
         return sigmoid(output + outputBias);
+    }
+
+    private void backpropagate(double input, double output, double target) {
+        double outputErrorSignal = (target - output) * sigmoidDerivative(output);
+        for (int j = 0; j < hiddenSize; j++) {
+            double hiddenErrorSignal = outputErrorSignal * outputWeights[j] * sigmoidDerivative(hiddenLayerOutputs[j]);
+
+            outputWeights[j] += learningRate * hiddenLayerOutputs[j] * outputErrorSignal;
+            hiddenWeights[j][0] += learningRate * input * hiddenErrorSignal;
+            hiddenBiases[j] += learningRate * hiddenErrorSignal;
+        }
+        outputBias += learningRate * outputErrorSignal;
     }
 
     public void train(double[] xValues, double[] yValues, int epochs) {
@@ -73,40 +85,26 @@ public class NeuralNetwork {
         for (int epoch = 0; epoch < epochs; epoch++) {
             double mse = 0;
             for (int i = 0; i < xValues.length; i++) {
+                // Random selection of
                 int randomIndex = rand.nextInt(xValues.length);
                 double input = xValues[randomIndex];
                 double target = yValues[randomIndex];
 
                 // Forward pass
-                double[] hiddenLayerOutputs = new double[hiddenSize];
-                for (int j = 0; j < hiddenSize; j++) {
-                    hiddenLayerOutputs[j] = sigmoid(input * hiddenWeights[j][0] + hiddenBiases[j]);
-                }
-                double output = 0;
-                for (int j = 0; j < hiddenSize; j++) {
-                    output += hiddenLayerOutputs[j] * outputWeights[j];
-                }
-                output = sigmoid(output + outputBias);
+                double output = forward(input);
 
                 // Compute the error
                 double error = target - output;
-                mse += Math.pow(error,2);
+                mse += Math.pow(error, 2);
 
                 // Backpropagation (update weights and biases)
-                double outputErrorSignal = error * sigmoidDerivative(output);
-                for (int j = 0; j < hiddenSize; j++) {
-                    double hiddenErrorSignal = outputErrorSignal * outputWeights[j] * sigmoidDerivative(hiddenLayerOutputs[j]);
-
-                    outputWeights[j] += learningRate * hiddenLayerOutputs[j] * outputErrorSignal;
-                    hiddenWeights[j][0] += learningRate * input * hiddenErrorSignal;
-                    hiddenBiases[j] += learningRate * hiddenErrorSignal;
-                }
-                outputBias += learningRate * outputErrorSignal;
+                backpropagate(input, output, target);
             }
 
             System.out.println("Epoch " + (epoch + 1) + ", MSE: " + mse);
         }
     }
+
 
     public static void plotData(double[] xValues, double[] yValues, double[] predictedValues) {
         XYSeries actualSeries = new XYSeries("Actual");
