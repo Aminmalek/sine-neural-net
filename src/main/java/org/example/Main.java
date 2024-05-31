@@ -25,7 +25,7 @@ public class Main {
             normSinY[i] = (sinY[i] + 1.0) / 2.0;
         }
 
-        NeuralNetwork nn = new NeuralNetwork(1, 25, 1, 0.23);
+        NeuralNetwork nn = new NeuralNetwork(1, 20, 1, 0.1);
         int epochs = 10000;
         nn.train(normSinX, normSinY, epochs);
 
@@ -37,7 +37,7 @@ public class Main {
             predictedY[i] = (predictedY[i] * 2.0) - 1.0;
         }
         // Scale the input value to fit within the range [-1, 1]
-        double scaledInput = (180/ 180.0) - 1.0; // Assuming 90 represents 90 degrees
+        double scaledInput = (90/ 180.0) - 1.0; // Assuming 90 represents 90 degrees
         double predictedValue = nn.forward(scaledInput);
         // Denormalize the predicted output
         double denormalizedValue = (predictedValue * 2.0) - 1.0;
